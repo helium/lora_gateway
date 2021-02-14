@@ -1103,7 +1103,10 @@ int lgw_cnt2gps(struct tref ref, uint32_t count_us, struct timespec *gps_time) {
     /* now add that delta to reference GPS time */
     fractpart = modf (delta_sec , &intpart);
     tmp = ref.gps.tv_nsec + (long)(fractpart * 1E9);
-    if (tmp < (long)1E9) { /* the nanosecond part doesn't overflow */
+    if (tmp < 0) { /* the nanosecond part has underflown */
+        gps_time->tv_sec = ref.gps.tv_sec + (time_t)intpart - 1;
+        gps_time->tv_nsec = tmp + (long)1E9;
+    } else if (tmp < (long)1E9) { /* the nanosecond part hasn't overflown */
         gps_time->tv_sec = ref.gps.tv_sec + (time_t)intpart;
         gps_time->tv_nsec = tmp;
     } else { /* must carry one second */
