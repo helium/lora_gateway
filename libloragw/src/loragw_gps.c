@@ -1049,7 +1049,10 @@ int lgw_cnt2utc(struct tref ref, uint32_t count_us, struct timespec *utc) {
     /* now add that delta to reference UTC time */
     fractpart = modf (delta_sec , &intpart);
     tmp = ref.utc.tv_nsec + (long)(fractpart * 1E9);
-    if (tmp < (long)1E9) { /* the nanosecond part doesn't overflow */
+    if (tmp < 0) { /* the nanosecond part has underflown */
+        utc->tv_sec = ref.utc.tv_sec + (time_t)intpart - 1;
+        utc->tv_nsec = tmp + (long)1E9;
+    } else if (tmp < (long)1E9) { /* the nanosecond part hasn't overflown */
         utc->tv_sec = ref.utc.tv_sec + (time_t)intpart;
         utc->tv_nsec = tmp;
     } else { /* must carry one second */
